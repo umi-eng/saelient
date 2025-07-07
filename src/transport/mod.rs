@@ -39,7 +39,17 @@ pub struct Transfer<'a> {
 
 impl<'a> Transfer<'a> {
     /// Create a new transfer from a RTS message received from the sender.
-    pub fn new(rts: RequestToSend, storage: impl Into<ManagedSlice<'a, u8>>) -> Self {
+    #[cfg(feature = "alloc")]
+    pub fn new(rts: RequestToSend) -> Self {
+        Self {
+            rts,
+            rx_packets: 0,
+            storage: Vec::new().into(),
+        }
+    }
+
+    /// Create a new transfer from a RTS message received from the sender using provided storage.
+    pub fn new_with_storage(rts: RequestToSend, storage: impl Into<ManagedSlice<'a, u8>>) -> Self {
         Self {
             rts,
             rx_packets: 0,
@@ -123,8 +133,7 @@ mod tests {
     #[test]
     fn transmission() {
         let rts = message::RequestToSend::new(16, Some(2), Pgn::ProprietaryA);
-        let buf = vec![];
-        let mut transfer = Transfer::new(rts, buf);
+        let mut transfer = Transfer::new(rts);
 
         // send first data transfer
         let dt = message::DataTransfer::try_from([1, 1, 2, 3, 4, 5, 6, 7].as_ref()).unwrap();
