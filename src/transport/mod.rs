@@ -1,7 +1,5 @@
 mod message;
 
-use core::cmp::min;
-
 use managed::ManagedSlice;
 pub use message::{
     AbortReason, AbortSenderRole, ClearToSend, ConnectionAbort, DataTransfer, EndOfMessageAck,
@@ -30,7 +28,7 @@ impl From<&Response> for [u8; 8] {
     }
 }
 
-/// An ongoing transfer.
+/// An ongoing transport-protocol transfer.
 pub struct Transfer<'a> {
     rts: RequestToSend,
     rx_packets: u8,
