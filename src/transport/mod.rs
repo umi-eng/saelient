@@ -33,6 +33,7 @@ pub struct Transfer<'a> {
     rts: RequestToSend,
     rx_packets: u8,
     storage: ManagedSlice<'a, u8>,
+    abort: bool,
 }
 
 impl<'a> Transfer<'a> {
@@ -43,6 +44,7 @@ impl<'a> Transfer<'a> {
             rts,
             rx_packets: 0,
             storage: Vec::new().into(),
+            abort: false,
         }
     }
 
@@ -52,6 +54,7 @@ impl<'a> Transfer<'a> {
             rts,
             rx_packets: 0,
             storage: storage.into(),
+            abort: false,
         }
     }
 
@@ -59,7 +62,7 @@ impl<'a> Transfer<'a> {
     ///
     /// The contents of this buffer are only valid after the transfer is complete.
     pub fn finished(&self) -> Option<&[u8]> {
-        if self.rx_packets >= self.rts.total_packets() {
+        if self.rx_packets >= self.rts.total_packets() && !self.abort {
             Some(&self.storage[..self.rts.total_size() as usize])
         } else {
             None
@@ -90,6 +93,7 @@ impl<'a> Transfer<'a> {
             }
             ManagedSlice::Borrowed(slice) => {
                 let Some(chunk) = slice.chunks_mut(7).nth(self.rx_packets as usize) else {
+                    self.abort = true;
                     return Err((
                         Error::StorageTooSmall,
                         ConnectionAbort::new(
