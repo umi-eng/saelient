@@ -1,5 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(any(test, feature = "alloc", feature = "std")), no_std)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 pub mod diagnostic;
