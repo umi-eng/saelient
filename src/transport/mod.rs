@@ -75,6 +75,7 @@ impl<'a> Transfer<'a> {
         msg: DataTransfer,
     ) -> Result<Option<Response>, (Error, ConnectionAbort)> {
         if msg.sequence() != self.rx_packets + 1 {
+            self.abort = true;
             return Err((
                 Error::Sequence,
                 ConnectionAbort::new(
