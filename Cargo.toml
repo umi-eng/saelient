@@ -1,0 +1,18 @@
+[package]
+name = "saelient"
+description = "A J1939 implementation for systems big and small"
+version = "0.2.0"
+edition = "2024"
+license = "MPL-2.0"
+
+[dependencies]
+defmt = { version = "1.0.1", optional = true }
+embedded-can = "0.4.1"
+managed = { version = "0.8.0", default-features = false }
+num = { version = "0.4.3", default-features = false }
+
+[features]
+default = ["std"]
+std = ["managed/std", "alloc"]
+alloc = ["managed/alloc", "defmt?/alloc"]
+defmt-1 = ["defmt"]

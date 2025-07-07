@@ -1,0 +1,150 @@
+mod message;
+
+use core::cmp::min;
+
+use managed::ManagedSlice;
+pub use message::{
+    AbortReason, AbortSenderRole, ClearToSend, ConnectionAbort, DataTransfer, EndOfMessageAck,
+    RequestToSend,
+};
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
+pub enum Error {
+    StorageTooSmall,
+    Sequence,
+}
+
+#[derive(Debug, Clone)]
+pub enum Response {
+    Cts(ClearToSend),
+    End(EndOfMessageAck),
+}
+
+impl From<&Response> for [u8; 8] {
+    fn from(value: &Response) -> Self {
+        match value {
+            Response::Cts(cts) => cts.into(),
+            Response::End(end) => end.into(),
+        }
+    }
+}
+
+/// An ongoing transfer.
+pub struct Transfer<'a> {
+    rts: RequestToSend,
+    rx_packets: u8,
+    storage: ManagedSlice<'a, u8>,
+}
+
+impl<'a> Transfer<'a> {
+    /// Create a new transfer from a RTS message received from the sender.
+    pub fn new(rts: RequestToSend, storage: impl Into<ManagedSlice<'a, u8>>) -> Self {
+        Self {
+            rts,
+            rx_packets: 0,
+            storage: storage.into(),
+        }
+    }
+
+    pub fn data(&self) -> &[u8] {
+        let len = (self.rx_packets as usize * 7) + 7;
+        let len = min(self.rts.total_size() as usize, len);
+        &self.storage[..len]
+    }
+
+    /// Feed the transfer with the next data transfer.
+    pub fn next(
+        &mut self,
+        msg: DataTransfer,
+    ) -> Result<Option<Response>, (Error, ConnectionAbort)> {
+        if msg.sequence() != self.rx_packets + 1 {
+            return Err((
+                Error::Sequence,
+                ConnectionAbort::new(
+                    AbortReason::BadSequenceNumber,
+                    AbortSenderRole::Receiver,
+                    self.rts.pgn(),
+                ),
+            ));
+        }
+
+        match &mut self.storage {
+            #[cfg(feature = "alloc")]
+            ManagedSlice::Owned(vec) => {
+                vec.extend_from_slice(&msg.data());
+                vec.truncate(self.rts.total_size() as usize);
+            }
+            ManagedSlice::Borrowed(slice) => {
+                let Some(chunk) = slice.chunks_mut(7).nth(self.rx_packets as usize) else {
+                    return Err((
+                        Error::StorageTooSmall,
+                        ConnectionAbort::new(
+                            AbortReason::Custom,
+                            AbortSenderRole::Receiver,
+                            self.rts.pgn(),
+                        ),
+                    ));
+                };
+                chunk.clone_from_slice(&msg.data()[..chunk.len()]);
+            }
+        }
+
+        self.rx_packets += 1;
+
+        if self.rx_packets == self.rts.total_packets() {
+            return Ok(Some(Response::End(EndOfMessageAck::new(
+                self.rts.total_size(),
+                self.rts.total_packets(),
+                self.rts.pgn(),
+            ))));
+        }
+
+        if let Some(packets_per_response) = self.rts.max_packets_per_response() {
+            // send cts on nth data transfer
+            if msg.sequence() % packets_per_response == 0 {
+                return Ok(Some(Response::Cts(ClearToSend::new(
+                    self.rts.max_packets_per_response(),
+                    self.rx_packets + 1,
+                    self.rts.pgn(),
+                ))));
+            }
+        }
+
+        Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::id::Pgn;
+
+    #[test]
+    fn transmission() {
+        let rts = message::RequestToSend::new(16, Some(2), Pgn::ProprietaryA);
+        let buf = vec![];
+        let mut transfer = Transfer::new(rts, buf);
+
+        // send first data transfer
+        let dt = message::DataTransfer::try_from([1, 1, 2, 3, 4, 5, 6, 7].as_ref()).unwrap();
+        transfer.next(dt).unwrap();
+
+        // send second data transfer which should trigger a CTS response.
+        let dt = message::DataTransfer::try_from([2, 1, 2, 3, 4, 5, 6, 7].as_ref()).unwrap();
+        let cts_response = transfer.next(dt).unwrap().expect("Response frame");
+        assert!(matches!(&cts_response, Response::Cts(cts) if cts.next_sequence() == 3));
+
+        // send third data transfer which should trigger a EndOfMsgAck response.
+        let dt = message::DataTransfer::try_from([3, 1, 2, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF].as_ref())
+            .unwrap();
+        let ack_response = transfer.next(dt).unwrap().expect("Response frame");
+        assert!(matches!(&ack_response, Response::End(end) if end.total_size() == 16));
+        assert!(matches!(&ack_response, Response::End(end) if end.total_packets() == 3));
+
+        assert_eq!(
+            transfer.data(),
+            &[1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2]
+        );
+    }
+}
