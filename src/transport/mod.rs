@@ -11,6 +11,7 @@ pub use message::{
 pub enum Error {
     StorageTooSmall,
     Sequence,
+    PreviousAbort,
 }
 
 #[derive(Debug, Clone)]
@@ -74,6 +75,17 @@ impl<'a> Transfer<'a> {
         &mut self,
         msg: DataTransfer,
     ) -> Result<Option<Response>, (Error, ConnectionAbort)> {
+        if self.abort {
+            return Err((
+                Error::PreviousAbort,
+                ConnectionAbort::new(
+                    AbortReason::UnexpectedDataTransfer,
+                    AbortSenderRole::Receiver,
+                    self.rts.pgn(),
+                ),
+            ));
+        }
+
         if msg.sequence() != self.rx_packets + 1 {
             self.abort = true;
             return Err((
