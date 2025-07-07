@@ -57,10 +57,15 @@ impl<'a> Transfer<'a> {
         }
     }
 
-    pub fn data(&self) -> &[u8] {
-        let len = (self.rx_packets as usize * 7) + 7;
-        let len = min(self.rts.total_size() as usize, len);
-        &self.storage[..len]
+    /// Return read-only acess to the internal buffer.
+    ///
+    /// The contents of this buffer are only valid after the transfer is complete.
+    pub fn finished(&self) -> Option<&[u8]> {
+        if self.rx_packets >= self.rts.total_packets() {
+            Some(&self.storage[..self.rts.total_size() as usize])
+        } else {
+            None
+        }
     }
 
     /// Feed the transfer with the next data transfer.
@@ -152,7 +157,7 @@ mod tests {
         assert!(matches!(&ack_response, Response::End(end) if end.total_packets() == 3));
 
         assert_eq!(
-            transfer.data(),
+            transfer.finished().unwrap(),
             &[1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2]
         );
     }
