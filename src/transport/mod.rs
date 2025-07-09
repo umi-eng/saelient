@@ -31,6 +31,7 @@ impl From<&Response> for [u8; 8] {
 }
 
 /// An ongoing transport-protocol transfer.
+#[derive(Debug)]
 pub struct Transfer<'a> {
     rts: RequestToSend,
     rx_packets: u8,
