@@ -2,6 +2,7 @@ use crate::id::Pgn;
 
 /// Request to send (TP.CM_RTS) message.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct RequestToSend {
     total_size: u16,
     total_packets: u8,
@@ -107,6 +108,7 @@ impl<'a> TryFrom<&'a [u8]> for RequestToSend {
 
 /// Clear to send (TP.CM_CTS) message.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct ClearToSend {
     max_packets_per_response: Option<u8>,
     next_sequence: u8,
@@ -180,6 +182,7 @@ impl<'a> TryFrom<&'a [u8]> for ClearToSend {
 
 /// End of message acknowledge (TP.CM_EndOfMsgAck) message.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct EndOfMessageAck {
     total_size: u16,
     total_packets: u8,
@@ -260,6 +263,7 @@ impl<'a> TryFrom<&'a [u8]> for EndOfMessageAck {
 
 /// Connection abort (TP.Conn_Abort) message.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct ConnectionAbort {
     reason: AbortReason,
     sender_role: AbortSenderRole,
@@ -388,6 +392,7 @@ impl From<&AbortReason> for u8 {
 
 /// Abort message sender role.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum AbortSenderRole {
     Sender = 0b00,
     Receiver = 0b01,
@@ -416,6 +421,7 @@ impl From<&AbortSenderRole> for u8 {
 
 /// Data transfer (TP.DT) message.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct DataTransfer {
     sequence: u8,
     data: [u8; 7],

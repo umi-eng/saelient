@@ -1,5 +1,6 @@
 /// DM14 - Memory Access Request
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct MemoryAccessRequest {
     length: u16,
     command: Command,
@@ -101,6 +102,7 @@ impl<'a> TryFrom<&'a [u8]> for MemoryAccessRequest {
 
 /// Memory access request command.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Command {
     Erase,
     Read,
@@ -147,6 +149,7 @@ impl From<u8> for Command {
 
 /// Direct or spatial memory addressing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Pointer {
     Direct(u32),
     Spatial(u32),
@@ -154,6 +157,7 @@ pub enum Pointer {
 
 /// DM15 - Memory Access Response
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct MemoryAccessResponse {
     length: u16,
     status: Status,
@@ -240,6 +244,7 @@ impl<'a> TryFrom<&'a [u8]> for MemoryAccessResponse {
 
 /// Memory access response status.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Status {
     Proceed,
     Busy,
@@ -274,6 +279,7 @@ impl From<u8> for Status {
 
 /// Error indicator state.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum ErrorIndicator {
     None,
     NotIdentified,
@@ -423,6 +429,7 @@ impl From<u32> for ErrorIndicator {
 
 /// EDCP Extension State.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum EdcpExtensionState {
     Completed,
     ConcatenateFollowingAsHigherOrder,
@@ -434,6 +441,7 @@ pub enum EdcpExtensionState {
 
 /// DM17 - Boot Load Data
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct BootLoadData {
     data: [u8; 8],
 }

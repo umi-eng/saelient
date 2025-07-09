@@ -15,6 +15,7 @@ pub enum Error {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Response {
     Cts(ClearToSend),
     End(EndOfMessageAck),
