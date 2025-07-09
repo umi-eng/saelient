@@ -37,7 +37,6 @@ macro_rules! slot_impl {
     ($type:ident, $param:ident, $offset:expr, $scale:expr, $unit:expr, $comment:expr) => {
         #[doc = $comment]
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
         pub struct $type($param);
 
         impl Slot<$param> for $type {
@@ -56,6 +55,7 @@ macro_rules! slot_impl {
     };
 }
 
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 slot_impl!(
     SaeTP01,
     Param8,
@@ -65,6 +65,7 @@ slot_impl!(
     "Temperature - 1 °C per bit"
 );
 
+#[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 slot_impl!(
     SaeEV06,
     Param16,
