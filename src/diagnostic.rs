@@ -74,7 +74,7 @@ impl<'a> TryFrom<&'a [u8]> for MemoryAccessRequest {
 }
 
 /// Memory access request command.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Command {
     Erase,
@@ -86,6 +86,13 @@ pub enum Command {
     BootLoad,
     EdcpGeneration,
     Other(u8),
+}
+
+impl PartialEq for Command {
+    fn eq(&self, other: &Self) -> bool {
+        // Cast to underlying value to compare
+        u8::from(*self) == u8::from(*other)
+    }
 }
 
 impl From<Command> for u8 {
@@ -193,7 +200,7 @@ impl<'a> TryFrom<&'a [u8]> for MemoryAccessResponse {
 }
 
 /// Memory access response status.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Status {
     Proceed,
@@ -201,6 +208,13 @@ pub enum Status {
     OperationCompleted,
     OperationFailed,
     Other(u8),
+}
+
+impl PartialEq for Status {
+    fn eq(&self, other: &Self) -> bool {
+        // Cast to underlying value to compare
+        u8::from(*self) == u8::from(*other)
+    }
 }
 
 impl From<Status> for u8 {
@@ -228,7 +242,7 @@ impl From<u8> for Status {
 }
 
 /// Error indicator state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum ErrorIndicator {
     None,
@@ -272,6 +286,13 @@ pub enum ErrorIndicator {
     TransportDataNotCompleted,
     NoIndicatorAvailable,
     Other(u32),
+}
+
+impl PartialEq for ErrorIndicator {
+    fn eq(&self, other: &Self) -> bool {
+        // Cast to underlying value to compare
+        u32::from(*self) == u32::from(*other)
+    }
 }
 
 impl From<ErrorIndicator> for u32 {
