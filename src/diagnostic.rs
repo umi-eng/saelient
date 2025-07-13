@@ -1,11 +1,8 @@
 /// DM14 - Memory Access Request
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct MemoryAccessRequest {
-    length: u16,
-    command: Command,
-    pointer: Pointer,
-    key_or_user_level: u16,
+    raw: [u8; 8],
 }
 
 impl MemoryAccessRequest {
@@ -15,58 +12,54 @@ impl MemoryAccessRequest {
     pub fn new(command: Command, pointer: Pointer, length: u16, key_or_user_level: u16) -> Self {
         assert!(length <= 0b11111111111);
 
-        Self {
-            command,
-            pointer,
-            length,
-            key_or_user_level,
-        }
+        let mut raw = [0; 8];
+
+        let length = length.to_le_bytes();
+        raw[0] |= length[0];
+        raw[1] |= length[1] << 5;
+
+        raw[1] |= u8::from(command) << 1;
+
+        let pointer = match pointer {
+            Pointer::Direct(value) => value,
+            Pointer::Spatial(value) => value,
+        };
+        raw[2..6].copy_from_slice(&pointer.to_le_bytes());
+
+        raw[6..8].copy_from_slice(&key_or_user_level.to_le_bytes());
+
+        Self { raw }
     }
 
     /// The number of bytes to apply the memory operation to.
     pub fn length(&self) -> u16 {
-        self.length
+        u16::from_le_bytes([self.raw[0], (self.raw[1] >> 5) & 0b111])
     }
 
     /// The command type.
     pub fn command(&self) -> Command {
-        self.command
+        Command::from((self.raw[1] >> 1) & 0b111)
     }
 
     /// Memory address or object identifier.
     pub fn pointer(&self) -> Pointer {
-        self.pointer
+        let value = u32::from_le_bytes([self.raw[2], self.raw[3], self.raw[4], self.raw[5]]);
+        if self.raw[1] & 0b10000 != 0 {
+            Pointer::Spatial(value)
+        } else {
+            Pointer::Direct(value)
+        }
     }
 
     /// Security key or user level, depending on context.
     pub fn key_or_user_level(&self) -> u16 {
-        self.key_or_user_level
+        u16::from_le_bytes([self.raw[6], self.raw[7]])
     }
 }
 
 impl From<&MemoryAccessRequest> for [u8; 8] {
     fn from(req: &MemoryAccessRequest) -> Self {
-        let mut data = [0; 8];
-
-        let length = req.length.to_le_bytes();
-        data[0] |= length[0];
-        data[1] |= length[1] << 5;
-
-        if let Pointer::Spatial(_) = req.pointer {
-            data[1] |= 1 << 4;
-        }
-
-        data[1] |= u8::from(req.command) << 1;
-
-        let pointer = match req.pointer {
-            Pointer::Direct(value) => value,
-            Pointer::Spatial(value) => value,
-        };
-        data[2..6].copy_from_slice(&pointer.to_le_bytes());
-
-        data[6..].copy_from_slice(&req.key_or_user_level.to_le_bytes());
-
-        data
+        req.raw
     }
 }
 
@@ -74,28 +67,8 @@ impl<'a> TryFrom<&'a [u8]> for MemoryAccessRequest {
     type Error = &'a [u8];
 
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
-        if value.len() != 8 {
-            return Err(value);
-        }
-
-        let length = u16::from_le_bytes([value[0], (value[1] >> 5) & 0b111]);
-
-        let command = Command::from((value[1] >> 1) & 0b111);
-
-        let pointer = u32::from_le_bytes([value[2], value[3], value[4], value[5]]);
-        let pointer = if value[1] & 0b10000 != 0 {
-            Pointer::Spatial(pointer)
-        } else {
-            Pointer::Direct(pointer)
-        };
-
-        let key_or_user_level = u16::from_le_bytes([value[6], value[7]]);
-
         Ok(Self {
-            length,
-            command,
-            pointer,
-            key_or_user_level,
+            raw: value.try_into().map_err(|_| value)?,
         })
     }
 }
@@ -156,13 +129,10 @@ pub enum Pointer {
 }
 
 /// DM15 - Memory Access Response
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct MemoryAccessResponse {
-    length: u16,
-    status: Status,
-    error_indicator: ErrorIndicator,
-    seed: u16,
+    raw: [u8; 8],
 }
 
 impl MemoryAccessResponse {
@@ -172,47 +142,43 @@ impl MemoryAccessResponse {
     pub fn new(status: Status, error_indicator: ErrorIndicator, length: u16, seed: u16) -> Self {
         assert!(length <= 0b11111111111);
 
-        Self {
-            status,
-            error_indicator,
-            length,
-            seed,
-        }
+        let mut raw = [0; 8];
+
+        let length = length.to_le_bytes();
+        raw[0] |= length[0];
+        raw[1] |= length[1] << 5;
+
+        raw[1] |= u8::from(status) << 1;
+
+        let error_indicator: u32 = error_indicator.into();
+        raw[2..5].copy_from_slice(&error_indicator.to_le_bytes()[..3]);
+
+        raw[6..8].copy_from_slice(&seed.to_le_bytes());
+
+        Self { raw }
     }
 
     pub fn length(&self) -> u16 {
-        self.length
+        u16::from_le_bytes([self.raw[0], (self.raw[1] >> 5) & 0b111])
     }
 
     pub fn status(&self) -> Status {
-        self.status
+        Status::from((self.raw[1] >> 1) & 0b111)
     }
 
     pub fn error_indicator(&self) -> ErrorIndicator {
-        self.error_indicator
+        let indicator = u32::from_le_bytes([self.raw[2], self.raw[3], self.raw[4], 0]);
+        ErrorIndicator::from(indicator)
     }
 
     pub fn seed(&self) -> u16 {
-        self.seed
+        u16::from_le_bytes([self.raw[6], self.raw[7]])
     }
 }
 
 impl From<&MemoryAccessResponse> for [u8; 8] {
     fn from(res: &MemoryAccessResponse) -> Self {
-        let mut data = [0; 8];
-
-        let length = res.length.to_le_bytes();
-        data[0] |= length[0];
-        data[1] |= length[1] << 5;
-
-        data[1] |= u8::from(res.status) << 1;
-
-        let error_indicator: u32 = res.error_indicator.into();
-        data[2..5].copy_from_slice(&error_indicator.to_le_bytes()[..3]);
-
-        data[6..8].copy_from_slice(&res.seed.to_le_bytes());
-
-        data
+        res.raw
     }
 }
 
@@ -220,30 +186,14 @@ impl<'a> TryFrom<&'a [u8]> for MemoryAccessResponse {
     type Error = &'a [u8];
 
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
-        if value.len() != 8 {
-            return Err(value);
-        }
-
-        let length = u16::from_le_bytes([value[0], (value[1] >> 5) & 0b111]);
-
-        let status = Status::from((value[1] >> 1) & 0b111);
-
-        let error_indicator = u32::from_le_bytes([value[2], value[3], value[4], 0]);
-        let error_indicator = ErrorIndicator::from(error_indicator);
-
-        let seed = u16::from_le_bytes([value[6], value[7]]);
-
         Ok(Self {
-            length,
-            status,
-            error_indicator,
-            seed,
+            raw: value.try_into().map_err(|_| value)?,
         })
     }
 }
 
 /// Memory access response status.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Status {
     Proceed,
@@ -278,7 +228,7 @@ impl From<u8> for Status {
 }
 
 /// Error indicator state.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum ErrorIndicator {
     None,
@@ -428,7 +378,7 @@ impl From<u32> for ErrorIndicator {
 }
 
 /// EDCP Extension State.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum EdcpExtensionState {
     Completed,
@@ -440,15 +390,21 @@ pub enum EdcpExtensionState {
 }
 
 /// DM17 - Boot Load Data
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct BootLoadData {
-    data: [u8; 8],
+    raw: [u8; 8],
 }
 
 impl BootLoadData {
     pub fn data(&self) -> [u8; 8] {
-        self.data
+        self.raw
+    }
+}
+
+impl From<&BootLoadData> for [u8; 8] {
+    fn from(bl: &BootLoadData) -> Self {
+        bl.raw
     }
 }
 
@@ -456,11 +412,9 @@ impl<'a> TryFrom<&'a [u8]> for BootLoadData {
     type Error = &'a [u8];
 
     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
-        let Ok(data) = value.try_into() else {
-            return Err(value);
-        };
-
-        Ok(Self { data })
+        Ok(Self {
+            raw: value.try_into().map_err(|_| value)?,
+        })
     }
 }
 
