@@ -1,6 +1,6 @@
 # Saelient
 
-A Rust J1939 implementation.
+A native Rust library that provides high-level abstractions over key J1939 concepts.
 
 ## Features
 
