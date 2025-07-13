@@ -205,6 +205,10 @@ impl Default for IdBuilder {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub enum Pgn {
+    /// RQST2 - Request 2
+    Request2,
+    /// XFER - Transfer
+    Transfer,
     /// DM17 - Boot Load Data
     BootLoadData,
     /// DM16 - Binary Data Transfer
@@ -213,6 +217,10 @@ pub enum Pgn {
     MemoryAccessResponse,
     /// DM14 - Memory Access Request
     MemoryAccessRequest,
+    /// RQST - Request
+    Request,
+    /// ACKM - Acknowledgement
+    Acknowledgement,
     /// TP.DT - Transport Protocol - Data Transfer
     TransportProtocolDataTransfer,
     /// TP.CM - Transport Protocol - Connection Mgmt
@@ -238,10 +246,14 @@ impl Pgn {
 impl From<u32> for Pgn {
     fn from(value: u32) -> Self {
         match value {
+            51456 => Self::Request2,
+            51712 => Self::Transfer,
             54784 => Self::BootLoadData,
             55040 => Self::BinaryDataTransfer,
             55296 => Self::MemoryAccessResponse,
             55552 => Self::MemoryAccessRequest,
+            59904 => Self::Request,
+            59392 => Self::Acknowledgement,
             60160 => Self::TransportProtocolDataTransfer,
             60416 => Self::TransportProtocolConnectionManagement,
             61184 => Self::ProprietaryA,
@@ -256,10 +268,14 @@ impl From<u32> for Pgn {
 impl From<&Pgn> for u32 {
     fn from(value: &Pgn) -> Self {
         match value {
+            Pgn::Request2 => 51456,
+            Pgn::Transfer => 51712,
             Pgn::BootLoadData => 54784,
             Pgn::BinaryDataTransfer => 55040,
             Pgn::MemoryAccessResponse => 55296,
             Pgn::MemoryAccessRequest => 55552,
+            Pgn::Request => 59904,
+            Pgn::Acknowledgement => 59392,
             Pgn::TransportProtocolDataTransfer => 60160,
             Pgn::TransportProtocolConnectionManagement => 60416,
             Pgn::ProprietaryA => 61184,
