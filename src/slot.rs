@@ -1,3 +1,5 @@
+//! Scaling, limit, offset, and transfer functions (J1939-73)
+
 use crate::signal::{Param8, Param16, Signal};
 use num::{FromPrimitive, cast::AsPrimitive};
 

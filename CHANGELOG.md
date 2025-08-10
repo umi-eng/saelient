@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Module doc-comment titles.
+
 ## v0.2.0
 
 - Initial release.

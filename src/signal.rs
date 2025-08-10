@@ -1,3 +1,5 @@
+//! Signals (J1939-71)
+
 /// Signal type.
 pub trait Signal: Sized {
     /// Underlying base type.

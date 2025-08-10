@@ -1,3 +1,5 @@
+//! Transport protocol (J1939-21)
+
 mod message;
 
 use managed::ManagedSlice;

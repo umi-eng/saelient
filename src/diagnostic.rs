@@ -1,3 +1,5 @@
+//! Diagnostics (J1939-73)
+
 /// DM14 - Memory Access Request
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
