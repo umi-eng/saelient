@@ -63,6 +63,10 @@ impl Id {
     pub fn dp(&self) -> bool {
         (self.0 >> 24 & 1) != 0
     }
+
+    /// Extended data page (EDP)
+    pub fn edp(&self) -> bool {
+        (self.0 >> 25 & 1) != 0
     }
 
     /// Parameter group number (PGN)
@@ -309,6 +313,7 @@ mod tests {
         assert_eq!(id.pgn(), Pgn::ProprietaryA);
         assert_eq!(id.pf(), PduFormat::Pdu1(0xEF));
         assert_eq!(id.dp(), false);
+        assert_eq!(id.edp(), false);
         assert_eq!(id.priority(), 6);
     }
 
