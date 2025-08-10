@@ -60,8 +60,9 @@ impl Id {
     }
 
     /// Data page (DP)
-    pub fn dp(&self) -> u8 {
-        ((self.0 >> 24) & 1) as u8
+    pub fn dp(&self) -> bool {
+        (self.0 >> 24 & 1) != 0
+    }
     }
 
     /// Parameter group number (PGN)
@@ -307,6 +308,7 @@ mod tests {
         assert_eq!(id.da(), Some(0x55));
         assert_eq!(id.pgn(), Pgn::ProprietaryA);
         assert_eq!(id.pf(), PduFormat::Pdu1(0xEF));
+        assert_eq!(id.dp(), false);
         assert_eq!(id.priority(), 6);
     }
 
