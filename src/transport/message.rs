@@ -428,6 +428,12 @@ pub struct DataTransfer {
 }
 
 impl DataTransfer {
+    /// Create a new data transfer message.
+    ///
+    /// The sequence number starts at 1 and continues up to the maximum of 255.
+    ///
+    /// Data with less than 7 bytes should have the remaining bytes padded with
+    /// 0xFF.
     pub fn new(sequence: u8, data: [u8; 7]) -> Self {
         Self { sequence, data }
     }
