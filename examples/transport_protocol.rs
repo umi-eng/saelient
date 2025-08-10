@@ -13,10 +13,16 @@ fn main() {
     // Data that the sender wants to transfer to the receiver.
     let data = [0_u8; 128];
 
+    // Split into chunks of seven bytes for each frame.
     for (seq, chunk) in data.chunks(7).enumerate() {
+        // Pad up to 7 bytes with the remaining as 0xFF.
         let mut padded = [0xFF; 7];
         padded[..chunk.len()].clone_from_slice(chunk);
+        // Create a new data transfer message.
         let dt = DataTransfer::new(seq as u8 + 1, padded);
+
+        // Give the transfer the data transfer message. The result depends on
+        // the next action required by the protocol or an error.
         match transfer.next(dt) {
             Ok(Some(Response::Cts(cts))) => println!("{:?}", cts),
             Ok(Some(Response::End(end))) => println!("{:?}", end),
