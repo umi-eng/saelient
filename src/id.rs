@@ -73,8 +73,8 @@ impl Id {
     pub fn pgn(&self) -> Pgn {
         let raw = self.0 >> 8;
         let raw = match self.pf() {
-            PduFormat::Pdu1(_) => raw & 0xFF00,
-            PduFormat::Pdu2(_) => raw & 0xFFFF,
+            PduFormat::Pdu1(_) => raw & 0x1FF00,
+            PduFormat::Pdu2(_) => raw & 0x1FFFF,
         };
         Pgn::from(raw)
     }
@@ -313,6 +313,19 @@ mod tests {
         assert_eq!(id.pgn(), Pgn::ProprietaryA);
         assert_eq!(id.pf(), PduFormat::Pdu1(0xEF));
         assert_eq!(id.dp(), false);
+        assert_eq!(id.edp(), false);
+        assert_eq!(id.priority(), 6);
+    }
+
+    #[test]
+    fn proprietary2_id() {
+        let id = Id::new(0x19EF5000);
+
+        assert_eq!(id.sa(), 0x00);
+        assert_eq!(id.da(), Some(0x50));
+        assert_eq!(id.pgn(), Pgn::ProprietaryA2);
+        assert_eq!(id.pf(), PduFormat::Pdu1(0xEF));
+        assert_eq!(id.dp(), true);
         assert_eq!(id.edp(), false);
         assert_eq!(id.priority(), 6);
     }
