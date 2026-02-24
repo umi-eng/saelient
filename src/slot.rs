@@ -65,7 +65,6 @@ slot_impl!(
     "°C",
     "Temperature - 1 °C per bit"
 );
-
 slot_impl!(
     SaeEC06,
     Param16,
@@ -74,9 +73,7 @@ slot_impl!(
     "A",
     "Current - 0.001 A per bit"
 );
-
 slot_impl!(SaeEC09, Param8, 0.0, 0.25, "A", "Current - 0.25 A per bit");
-
 slot_impl!(
     SaeEV06,
     Param16,
