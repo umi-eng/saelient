@@ -67,6 +67,17 @@ slot_impl!(
 );
 
 slot_impl!(
+    SaeEC06,
+    Param16,
+    0.0,
+    0.001,
+    "A",
+    "Current - 0.001 A per bit"
+);
+
+slot_impl!(SaeEC09, Param8, 0.0, 0.25, "A", "Current - 0.25 A per bit");
+
+slot_impl!(
     SaeEV06,
     Param16,
     0.0,
@@ -92,6 +103,38 @@ mod tests {
         let slot = SaeTP01::from_f32(0.0).unwrap();
         assert_eq!(slot.parameter().value().unwrap(), 40);
         assert_eq!(slot.as_f32(), Some(0.0));
+    }
+
+    #[test]
+    fn slot_sae_ec06() {
+        let slot = SaeEC06::from_f32(0.0).unwrap();
+        assert_eq!(slot.parameter().value().unwrap(), 0);
+        assert_eq!(slot.as_f32(), Some(0.0));
+
+        // "rounded" to the nearest representable float
+        let slot = SaeEC06::from_f32(24.000002).unwrap();
+        assert_eq!(slot.parameter().value().unwrap(), 24000);
+        assert_eq!(slot.as_f32(), Some(24.000002));
+
+        // "rounded" to the nearest representable float
+        let slot = SaeEC06::from_f32(64.225006).unwrap();
+        assert_eq!(slot.parameter().value().unwrap(), 64225);
+        assert_eq!(slot.as_f32(), Some(64.225006));
+    }
+
+    #[test]
+    fn slot_sae_ec09() {
+        let slot = SaeEC09::from_f32(0.0).unwrap();
+        assert_eq!(slot.parameter().value().unwrap(), 0);
+        assert_eq!(slot.as_f32(), Some(0.0));
+
+        let slot = SaeEC09::from_f32(31.25).unwrap();
+        assert_eq!(slot.parameter().value().unwrap(), 125);
+        assert_eq!(slot.as_f32(), Some(31.25));
+
+        let slot = SaeEC09::from_f32(62.5).unwrap();
+        assert_eq!(slot.parameter().value().unwrap(), 250);
+        assert_eq!(slot.as_f32(), Some(62.5));
     }
 
     #[test]
