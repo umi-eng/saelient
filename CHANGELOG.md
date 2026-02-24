@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add SAEec06 and SAEec09 SLOTs.
+
 ### Added
 
 - Module doc-comment titles.
