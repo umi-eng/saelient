@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add SAEec06 and SAEec09 SLOTs.
+- Add data page and extended data page to builder.
 
 ### Added
 

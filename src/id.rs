@@ -140,6 +140,8 @@ pub struct IdBuilder {
     pgn: Option<Pgn>,
     sa: Option<u8>,
     da: Option<u8>,
+    dp: bool,
+    edp: bool,
 }
 
 impl IdBuilder {
@@ -153,6 +155,8 @@ impl IdBuilder {
             pgn: None,
             sa: None,
             da: None,
+            dp: false,
+            edp: false,
         }
     }
 
@@ -187,6 +191,18 @@ impl IdBuilder {
         self
     }
 
+    /// Data page bit.
+    pub fn dp(mut self, dp: bool) -> Self {
+        self.dp = dp;
+        self
+    }
+
+    /// Extended data page bit.
+    pub fn edp(mut self, edp: bool) -> Self {
+        self.edp = edp;
+        self
+    }
+
     pub fn build(self) -> Option<Id> {
         let mut id = ((self.priority.unwrap_or(6) as u32) << 26)
             | (u32::from(self.pgn?) << 8)
@@ -195,6 +211,9 @@ impl IdBuilder {
         if let PduFormat::Pdu1(_) = Id::new(id).pf() {
             id |= (self.da? as u32) << 8;
         }
+
+        id |= (self.dp as u32) << 24;
+        id |= (self.edp as u32) << 25;
 
         Some(Id(id))
     }
@@ -342,6 +361,27 @@ mod tests {
 
         assert_eq!(id, Id::new(2565821696));
         assert_eq!(id.pf(), PduFormat::Pdu1(0xEF));
+    }
+
+    #[test]
+    fn builder_data_page() {
+        let id = IdBuilder::new()
+            .sa(0x00)
+            .da(0x00)
+            .pgn(Pgn::Other(0))
+            .dp(true)
+            .build()
+            .unwrap();
+        assert!(id.dp());
+
+        let id = IdBuilder::new()
+            .sa(0x00)
+            .da(0x00)
+            .pgn(Pgn::Other(0))
+            .edp(true)
+            .build()
+            .unwrap();
+        assert!(id.edp());
     }
 
     #[test]
