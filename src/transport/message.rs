@@ -326,7 +326,7 @@ impl From<&ConnectionAbort> for [u8; 8] {
         [
             ConnectionAbort::MUX,
             u8::from(&value.reason),
-            u8::from(&value.sender_role) & 0b11111100,
+            u8::from(&value.sender_role) | 0b11111100,
             0xFF,
             0xFF,
             pgn[0],

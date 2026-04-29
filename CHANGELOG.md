@@ -6,6 +6,7 @@
 - Add data page and extended data page to builder.
 - Implement `PartialEq` to mask of priority bits when comparing ids.
 - Fix spatial pointer flag not being set in memory request.
+- Fix wrong binary operation in masking sender role bits for transport message.
 
 ### Added
 
