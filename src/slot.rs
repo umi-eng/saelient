@@ -29,7 +29,7 @@ pub trait Slot<T: Signal>: Sized {
     fn as_f32(&self) -> Option<f32> {
         let parameter = self.parameter();
         let value: u32 = parameter.value()?.as_();
-        let value = (value as f32 + Self::OFFSET) * Self::SCALE;
+        let value = (value as f32 * Self::SCALE) + Self::OFFSET;
         Some(value)
     }
 }
