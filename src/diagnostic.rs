@@ -345,7 +345,7 @@ impl From<ErrorIndicator> for u32 {
         };
 
         // ensure the returned value is only 24-bits.
-        assert!(result <= 0xFFFFFF);
+        debug_assert!(result <= 0xFFFFFF);
 
         result
     }
@@ -353,7 +353,7 @@ impl From<ErrorIndicator> for u32 {
 
 impl From<u32> for ErrorIndicator {
     fn from(value: u32) -> Self {
-        assert!(value <= 0xFFFFFF);
+        debug_assert!(value <= 0xFFFFFF);
 
         match value {
             0x000000 => Self::None,
