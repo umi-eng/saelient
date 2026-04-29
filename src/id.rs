@@ -33,7 +33,10 @@ impl From<Pgn> for PduFormat {
 }
 
 /// J1939 identifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+///
+/// Equality comparisons exclude priority bits, making it easy to match frames
+/// by content regardless of priority.
+#[derive(Debug, Clone, Copy, Eq)]
 #[cfg_attr(feature = "defmt-1", derive(defmt::Format))]
 pub struct Id(u32);
 
@@ -111,6 +114,13 @@ impl Id {
     /// Source address (SA)
     pub fn sa(&self) -> u8 {
         (self.0 & 0xff) as u8
+    }
+}
+
+impl PartialEq for Id {
+    fn eq(&self, other: &Self) -> bool {
+        let mask = 0x3FFFFFF;
+        (self.0 & mask) == (other.0 & mask)
     }
 }
 
@@ -347,6 +357,14 @@ mod tests {
         assert_eq!(id.dp(), true);
         assert_eq!(id.edp(), false);
         assert_eq!(id.priority(), 6);
+    }
+
+    #[test]
+    fn id_equality() {
+        // these two id's are identical except for priority.
+        let id_a = Id::new(0x0CF004FE);
+        let id_b = Id::new(0x18F004FE);
+        assert_eq!(id_a, id_b);
     }
 
     #[test]
