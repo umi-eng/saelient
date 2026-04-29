@@ -95,19 +95,17 @@ impl Id {
 
     /// PDU specific destination address (DA)
     pub fn da(&self) -> Option<u8> {
-        if self.ps() <= 239 {
-            Some(self.ps())
-        } else {
-            None
+        match self.pf() {
+            PduFormat::Pdu1(_) => Some(self.ps()),
+            PduFormat::Pdu2(_) => None,
         }
     }
 
     /// PDU specific group extension (GE)
     pub fn ge(&self) -> Option<u8> {
-        if self.ps() >= 240 {
-            Some(self.ps())
-        } else {
-            None
+        match self.pf() {
+            PduFormat::Pdu2(_) => Some(self.ps()),
+            PduFormat::Pdu1(_) => None,
         }
     }
 
