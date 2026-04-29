@@ -22,11 +22,12 @@ impl MemoryAccessRequest {
 
         raw[1] |= u8::from(command) << 1;
 
-        let pointer = match pointer {
-            Pointer::Direct(value) => value,
-            Pointer::Spatial(value) => value,
+        let (pointer_value, is_spatial) = match pointer {
+            Pointer::Direct(value) => (value, false),
+            Pointer::Spatial(value) => (value, true),
         };
-        raw[2..6].copy_from_slice(&pointer.to_le_bytes());
+        raw[1] |= (is_spatial as u8) << 4;
+        raw[2..6].copy_from_slice(&pointer_value.to_le_bytes());
 
         raw[6..8].copy_from_slice(&key_or_user_level.to_le_bytes());
 
@@ -457,5 +458,12 @@ mod tests {
         // check we get the same result when we serialize back into bytes.
         let bytes: [u8; 8] = (&rq).into();
         assert_eq!(raw, bytes);
+    }
+
+    #[test]
+    fn memory_access_request_spatial() {
+        let rq = MemoryAccessRequest::new(Command::Read, Pointer::Spatial(0x012345), 288, 0);
+        let raw: &[u8] = &[0x20, 0x32, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00];
+        assert_eq!(rq.raw, raw);
     }
 }
