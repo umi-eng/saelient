@@ -1,3 +1,6 @@
+> [!NOTE]
+> This library has been moved to [`umi-eng/canbus`](https://github.com/umi-eng/canbus)
+
 # Saelient
 
 A native Rust library that provides high-level abstractions over key [SAE J1939](https://en.wikipedia.org/wiki/SAE_J1939) concepts.
